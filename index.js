@@ -15,6 +15,7 @@ const { MemoryVectorStore } = require("langchain/vectorstores/memory");
 const { BraveSearch } = require("langchain/tools");
 const OpenAI = require("openai");
 const cheerio = require("cheerio");
+const { log } = require("console");
 
 // 2. Initialize OpenAI and Supabase clients
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -37,10 +38,13 @@ async function rephraseInput(inputString) {
 
 async function searchEngineForSources(messageData) {
   const { message } = messageData;
-
+  console.log("HELLO");
   const loader = new BraveSearch({ apiKey: process.env.BRAVE_SEARCH_API_KEY });
+  console.log("HELLO2");
   const repahrasedMessage = await rephraseInput(message);
+  console.log("HELLO3");
   const docs = await loader.call(repahrasedMessage);
+  console.log("HELLO4");
 
   function normalizeData(docs) {
     return JSON.parse(docs)
@@ -220,6 +224,10 @@ io.on("connection", (socket) => {
     socket.emit("emit-payload", followUpPayload);
     console.log(followUpPayload);
   });
+});
+
+app.get("/", (req, res) => {
+  res.send("hello");
 });
 
 httpServer.listen(process.env.PORT || 3005, () => {});
