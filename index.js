@@ -222,4 +222,4 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(3005, () => {});
+httpServer.listen(process.env.PORT || 3005, () => {});
