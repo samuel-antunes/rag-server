@@ -186,14 +186,7 @@ const getGPTResults = async (inputString, socket) => {
   //   }
 };
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: "https://rag-app-eight.vercel.app", // Specify your front-end URL here
-    methods: ["GET", "POST"], // Specify the allowed HTTP request methods
-    allowedHeaders: ["my-custom-header"], // Optional: Specify any custom headers
-    credentials: true, // Optional: Use this if your front-end needs to send cookies or HTTP authentication information with requests
-  },
-});
+const io = new Server(httpServer);
 
 io.on("connection", (socket) => {
   socket.on("send-message", async (messageData) => {
@@ -234,7 +227,5 @@ io.on("connection", (socket) => {
 app.get("/", (req, res) => {
   res.send(`${process.env.PORT}`);
 });
-
-app.options("*", cors());
 
 httpServer.listen(process.env.PORT || 3005, () => {});
