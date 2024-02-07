@@ -232,7 +232,7 @@ io.on("connection", (socket) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("hello");
+  res.send(`${process.env.PORT}`);
 });
 
 app.options("*", cors());
