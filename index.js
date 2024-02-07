@@ -186,7 +186,7 @@ const getGPTResults = async (inputString, socket) => {
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: "https://rag-app-eight.vercel.app/",
   },
 });
 
