@@ -6,6 +6,8 @@ const httpServer = http.createServer(app);
 
 const { Server } = require("socket.io");
 
+const cors = require("cors");
+
 require("dotenv").config();
 
 // 1. Import Dependencies
@@ -232,5 +234,7 @@ io.on("connection", (socket) => {
 app.get("/", (req, res) => {
   res.send("hello");
 });
+
+app.options("*", cors());
 
 httpServer.listen(process.env.PORT || 3005, () => {});
