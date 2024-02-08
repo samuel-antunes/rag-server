@@ -2,11 +2,18 @@ const express = require("express");
 const http = require("http");
 
 const app = express();
+
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: "*",
+  })
+);
+
 const httpServer = http.createServer(app);
 
 const { Server } = require("socket.io");
-
-const cors = require("cors");
 
 require("dotenv").config();
 
@@ -228,12 +235,6 @@ io.on("connection", (socket) => {
     console.log(followUpPayload);
   });
 });
-
-app.use(
-  cors({
-    origin: "*",
-  })
-);
 
 app.get("/", (req, res) => {
   res.send(`${process.env.PORT}`);
