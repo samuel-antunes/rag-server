@@ -47,13 +47,12 @@ async function rephraseInput(inputString) {
 
 async function searchEngineForSources(messageData) {
   const { message } = messageData;
-  console.log("HELLO");
+
   const loader = new BraveSearch({ apiKey: process.env.BRAVE_SEARCH_API_KEY });
-  console.log("HELLO2");
+
   const repahrasedMessage = await rephraseInput(message);
-  console.log("HELLO3");
+
   const docs = await loader.call(repahrasedMessage);
-  console.log("HELLO4");
 
   function normalizeData(docs) {
     return JSON.parse(docs)
@@ -174,9 +173,10 @@ const getGPTResults = async (inputString, socket) => {
     if (part.choices[0]?.delta?.content) {
       // 39. Accumulate the content
       accumulatedContent += part.choices[0]?.delta?.content;
+      socket.emit("emit-payload", { type: "GPT", content: accumulatedContent });
     }
   }
-  socket.emit("emit-payload", { type: "GPT", content: accumulatedContent });
+
   // 35. Create an initial row in the database
   //   let rowId = await createRowForGPTResponse(to);
   //   // 36. Send initial payload
@@ -200,7 +200,6 @@ const io = new Server(httpServer, {
 });
 
 io.on("connection", (socket) => {
-  console.log("connected");
   socket.on("send-message", async (messageData) => {
     const normalizedDocs = await searchEngineForSources(messageData);
 
@@ -232,7 +231,6 @@ io.on("connection", (socket) => {
 
     const followUpPayload = await triggerLLMAndFollowup(inputString);
     socket.emit("emit-payload", followUpPayload);
-    console.log(followUpPayload);
   });
 });
 
