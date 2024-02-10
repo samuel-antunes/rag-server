@@ -74,6 +74,7 @@ async function searchEngineForSources(messageData) {
       .map(({ title, link }) => ({ title, link }));
   }
   const normalizedData = normalizeData(docs);
+
   return normalizedData;
 }
 
