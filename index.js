@@ -24,11 +24,24 @@ const { MemoryVectorStore } = require("langchain/vectorstores/memory");
 const { BraveSearch } = require("langchain/tools");
 const OpenAI = require("openai");
 const cheerio = require("cheerio");
+const { createClient } = require("@supabase/supabase-js");
 const { log } = require("console");
 
 // 2. Initialize OpenAI and Supabase clients
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const embeddings = new OpenAIEmbeddings();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_API_KEY
+);
+
+async function sendPayload(content, to) {
+  await supabase
+    .from("message_history")
+    .insert([{ payload: content, to: to }])
+    .select("id");
+}
 
 async function rephraseInput(inputString) {
   const gptAnswer = await openai.chat.completions.create({
@@ -191,6 +204,7 @@ const getGPTResults = async (inputString, socket) => {
   //       rowId = await updateRowWithGPTResponse(rowId, accumulatedContent, to);
   //     }
   //   }
+  return accumulatedContent;
 };
 
 const io = new Server(httpServer, {
@@ -200,10 +214,18 @@ const io = new Server(httpServer, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("send-message", async (messageData) => {
+  socket.on("send-message", async (message) => {
+    const { messageData, userID } = message;
+
     const normalizedDocs = await searchEngineForSources(messageData);
 
-    socket.emit("emit-payload", { type: "Sources", content: normalizedDocs });
+    const sourcesPayload = {
+      type: "Sources",
+      content: normalizedDocs,
+    };
+    // console.log(userID);
+    socket.emit("emit-payload");
+    sendPayload(sourcesPayload, userID);
 
     let { results, vectorCount } = await processVectors(normalizedDocs);
 
@@ -218,19 +240,32 @@ io.on("connection", (socket) => {
         ? successfulResults.slice(0, 4)
         : successfulResults;
     // 23. Send a payload message indicating the vector creation process is complete
-    socket.emit("emit-payload", {
+    const vectorCreationPayload = {
       type: "VectorCreation",
       content: `Finished Scanning Sources.`,
-    });
+    };
+    socket.emit("emit-payload", vectorCreationPayload);
+    sendPayload(vectorCreationPayload, userID);
     // 24. Trigger any remaining logic and follow-up actions
     const inputString = `Query: ${
       messageData.message
     }, Top Results: ${JSON.stringify(topResult)}`;
-    socket.emit("emit-payload", { type: "Heading", content: "Answer" });
-    await getGPTResults(inputString, socket);
+    const headingPayload = {
+      type: "Heading",
+      content: "Answer",
+    };
+    socket.emit("emit-payload", headingPayload);
+    sendPayload(headingPayload, userID);
+    const response = await getGPTResults(inputString, socket);
+    const GPTPayload = {
+      type: "GPT",
+      content: response,
+    };
+    sendPayload(GPTPayload, userID);
 
-    const followUpPayload = await triggerLLMAndFollowup(inputString);
+    let followUpPayload = await triggerLLMAndFollowup(inputString);
     socket.emit("emit-payload", followUpPayload);
+    sendPayload(followUpPayload, userID);
   });
 });
 
