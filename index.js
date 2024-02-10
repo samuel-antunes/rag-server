@@ -73,12 +73,12 @@ async function searchEngineForSources(messageData) {
       .slice(0, 4)
       .map(({ title, link }) => ({ title, link }));
   }
-  const normalizedData = normalizeData(docs);
+  const normalizedData = await normalizeData(docs);
 
   return normalizedData;
 }
 
-async function processVectors(normalizedData) {
+async function processVectors(normalizedData, message) {
   // 8. Initialize vectorCount
   let vectorCount = 0;
   // 9. Initialize async function for processing each search result item
@@ -111,7 +111,9 @@ async function processVectors(normalizedData) {
       return await vectorStore.similaritySearch(message, 1);
     } catch (error) {
       // 18. Log any error and increment the vector count
-      console.log(`Failed to fetch content for ${item.link}, skipping!`);
+      console.log(
+        `Failed to fetch content for ${item.link}, skipping!\nError:${error}`
+      );
       vectorCount++;
       return null;
     }
@@ -224,11 +226,15 @@ io.on("connection", (socket) => {
       type: "Sources",
       content: normalizedDocs,
     };
-    // console.log(userID);
-    socket.emit("emit-payload");
+
+    socket.emit("emit-payload", sourcesPayload);
+
     sendPayload(sourcesPayload, userID);
 
-    let { results, vectorCount } = await processVectors(normalizedDocs);
+    let { results, vectorCount } = await processVectors(
+      normalizedDocs,
+      messageData.message
+    );
 
     while (vectorCount < 4) {
       vectorCount++;
